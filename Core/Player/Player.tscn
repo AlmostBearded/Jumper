@@ -24,3 +24,15 @@ one_shot = true
 wait_time = 0.5
 one_shot = true
 
+[node name="CameraPivot" type="Position2D" parent="."]
+position = Vector2( 100, 0 )
+
+[node name="Camera2D" type="Camera2D" parent="CameraPivot"]
+current = true
+limit_left = 0
+limit_bottom = 232
+limit_smoothed = true
+smoothing_enabled = true
+editor_draw_limits = true
+editor_draw_drag_margin = true
+

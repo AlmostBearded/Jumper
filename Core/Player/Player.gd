@@ -1,22 +1,32 @@
 extends KinematicBody2D
 
-export (float) var groundSpeed = 75
-export (float) var groundAccel = 600
-export (float) var groundDecel = 300
-export (float) var airAccel = 100
-export (float) var airDecel = 30
-export (float) var jumpSpeed = 125
+export (float) var ground_speed = 75
+export (float) var ground_accel = 600
+export (float) var ground_decel = 300
+export (float) var air_accel = 100
+export (float) var air_decel = 30
+export (float) var jump_speed = 125
 export (float) var gravity = 300
-export (float) var cutJumpSpeed = 50
-export (float) var reactivityPercent = 1
+export (float) var cut_jump_speed = 50
+export (float) var reactivity_percent = 2
 
+const CAMERA_OFFSET_DIR = false
 
 var velocity = Vector2()
 var jumping = false
 var synced = false
+var input : float = 0
+onready var camera_offset = abs($CameraPivot.position.x)
 
 func _ready():
 	set("collision/safe_margin", 0.01)
+
+func _process(delta):
+	input = 0
+	if Input.is_action_pressed("move_right"): 
+		input = 1
+	if Input.is_action_pressed("move_left"): 
+		input = -1
 
 func _physics_process(delta):
 #	print("g: %s, pos: %s, vel: %s, gvel: %s" % 
@@ -24,47 +34,31 @@ func _physics_process(delta):
 #	print("g: %s" % 
 #			[is_on_floor()])
 	
-	var input = 0
-	if (Input.is_action_pressed("move_right")): input = 1
-	if (Input.is_action_pressed("move_left")): input = -1
-	
-	var has_input = input != 0
-	
 	if (is_on_floor()):
 		# Grounded
 		jumping = false
-		var moving = velocity.x != 0
 		
-		var targetSpeed = input * groundSpeed
-		if (input != 0 && (sign(velocity.x) == sign(targetSpeed) || velocity.x == 0) && abs(velocity.x) < abs(targetSpeed)):
+		var target_speed = input * ground_speed
+		if (input != 0 && abs(velocity.x) < abs(target_speed)):
 			# Accel
-			var maxAccelAmount = abs(velocity.x - targetSpeed)
-			var accelAmount = groundAccel * delta
-			velocity.x += input * min(maxAccelAmount, accelAmount)
+			var opposition_percent = 0 if sign(input) == sign(velocity.x) else 1
+			var max_accel_amount = abs(velocity.x - target_speed)
+			var accel_amount = (ground_accel + ground_accel * opposition_percent * 
+					reactivity_percent) * delta
+			velocity.x += input * min(max_accel_amount, accel_amount)
 		else:
 			# Decel
-			var maxDecelAmount = abs(targetSpeed - velocity.x)
-			var decelAmount = groundDecel * delta
+			var maxDecelAmount = abs(target_speed - velocity.x)
+			var decelAmount = ground_decel * delta
 			velocity.x -= sign(velocity.x) * min(maxDecelAmount, decelAmount)
-		
-#		if velocity.x == 0:
-##			if get_slide_count() > 0 && synced == false:
-##				var c = get_slide_collision(0)
-#			if synced == false:
-##				global_position.x = ground.global_position.x
-#				global_position.x = floor(global_position.x) + (ground.global_position.x - floor(ground.global_position.x))
-#				print("%f %f" % [ground.global_position.x, global_position.x])
-#				synced = true
-#		else:
-#			synced = false
 		
 	else:
 		# Airborne
-		if (has_input):
-			var oppositionPercent = 0 if sign(input) == sign(velocity.x) else 1
-			velocity.x += input * (airAccel + airAccel * oppositionPercent * reactivityPercent) * delta 
+		if (input != 0):
+			var opposition_percent = 0 if sign(input) == sign(velocity.x) else 1
+			velocity.x += input * (air_accel + air_accel * opposition_percent * reactivity_percent) * delta 
 		else: 
-			velocity.x -= sign(velocity.x) * min(abs(velocity.x), airDecel * delta)
+			velocity.x -= sign(velocity.x) * min(abs(velocity.x), air_decel * delta)
 		velocity.y += delta * gravity
 	
 	
@@ -74,14 +68,17 @@ func _physics_process(delta):
 	if (is_on_floor() || !$LateJumpToleranceTimer.is_stopped()):
 		if (!$EarlyJumpToleranceTimer.is_stopped()):
 			velocity += get_floor_velocity()
-			velocity.y -= jumpSpeed
+			velocity.y -= jump_speed
 			jumping = true
 			$EarlyJumpToleranceTimer.stop()
 			$LateJumpToleranceTimer.stop()
 	
-	if (jumping && !Input.is_action_pressed("jump") && velocity.y < -cutJumpSpeed):
-		velocity.y = -cutJumpSpeed
+	if (jumping && !Input.is_action_pressed("jump") && velocity.y < -cut_jump_speed):
+		velocity.y = -cut_jump_speed
 		jumping = false
+	
+	if CAMERA_OFFSET_DIR && velocity.x != 0:
+		$CameraPivot.position.x = camera_offset * sign(velocity.x)
 	
 	if jumping || !is_on_floor():
 		velocity = move_and_slide(velocity, Vector2(0, -1))
