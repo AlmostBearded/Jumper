@@ -3,9 +3,9 @@ extends KinematicBody2D
 export (float) var ground_speed = 75
 export (float) var ground_accel = 600
 export (float) var ground_decel = 300
-export (float) var air_accel = 100
+export (float) var air_accel = 50
 export (float) var air_decel = 30
-export (float) var jump_speed = 125
+export (float) var jump_speed = 100
 export (float) var gravity = 300
 export (float) var cut_jump_speed = 50
 export (float) var reactivity_percent = 2
@@ -62,15 +62,12 @@ func _physics_process(delta):
 		velocity.y += delta * gravity
 	
 	
-	if (Input.is_action_just_pressed("jump")):
-		$EarlyJumpToleranceTimer.start()
 	
-	if (is_on_floor() || !$LateJumpToleranceTimer.is_stopped()):
-		if (!$EarlyJumpToleranceTimer.is_stopped()):
+	if (!jumping && (is_on_floor() || !$LateJumpToleranceTimer.is_stopped())):
+		if (Input.is_action_pressed("jump")):
 			velocity += get_floor_velocity()
 			velocity.y -= jump_speed
 			jumping = true
-			$EarlyJumpToleranceTimer.stop()
 			$LateJumpToleranceTimer.stop()
 	
 	if (jumping && !Input.is_action_pressed("jump") && velocity.y < -cut_jump_speed):

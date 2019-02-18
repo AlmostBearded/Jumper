@@ -16,16 +16,11 @@ texture = ExtResource( 2 )
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource( 1 )
 
-[node name="EarlyJumpToleranceTimer" type="Timer" parent="."]
-wait_time = 0.5
-one_shot = true
-
 [node name="LateJumpToleranceTimer" type="Timer" parent="."]
 wait_time = 0.5
 one_shot = true
 
 [node name="CameraPivot" type="Position2D" parent="."]
-position = Vector2( 100, 0 )
 
 [node name="Camera2D" type="Camera2D" parent="CameraPivot"]
 current = true
